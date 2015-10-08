@@ -27,6 +27,10 @@ public class main {
             standalone = true;
         }
         
+        if (standalone == true) {
+            sm.getLinks2(43194);
+        }
+        
         if (standalone) {
             
             checkArgs(args, 1, "Uso: addSus|delSus|listSeries|listSus|getNewLinks <arg>");

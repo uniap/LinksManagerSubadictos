@@ -1,8 +1,6 @@
 
 package subadictos;
 
-import rmiapi.SubscrManagerAPI;
-
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
@@ -28,14 +26,14 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
     public SubadictosSM() throws RemoteException {
         listaSeries = null;
     }
-    
+
     @Override
     public void setDataDir(String path) throws IOException {
         this.dirBase = path;
         this.subsFile = dirBase + "/subscripciones.txt";
-        this.historyFile = dirBase + "/history.txt";        
+        this.historyFile = dirBase + "/history.txt";
     }
-    
+
     private ArrayList<String> getLinks(int pageId) throws IOException {
         ArrayList<String> links = new ArrayList<String>();
         URL URLpagina = new URL("http://www.subadictos.net/foros/showthread.php?t=" + pageId);
@@ -50,15 +48,15 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
                     if (txt.contains("ed2k")) {
                         ini = txt.indexOf("ed2k");
                         fin = txt.indexOf('"', ini);
-                        links.add(txt.substring(ini, fin));                    
+                        links.add(txt.substring(ini, fin));
                     } else if (txt.contains("magnet")) {
                         ini = txt.indexOf("magnet");
-                        fin = txt.indexOf('"', ini);                  
-                        links.add(txt.substring(ini, fin));                                          
+                        fin = txt.indexOf('"', ini);
+                        links.add(txt.substring(ini, fin));
                     }
                 }
                 catch(java.lang.StringIndexOutOfBoundsException e) { }
-            }   
+            }
         }
         return links;
     }
@@ -139,54 +137,6 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
         return list;
     }
 
-    @Override
-    public ArrayList<String> getNewLinksList(int linkType, int season, boolean addToHistory, boolean checkLastOnly) throws IOException {
-        ArrayList<String> list = new ArrayList();
-        ArrayList<String> suscriptas = this.getSubscriptionList();
-        
-        String maskSeason = (season == 0) ? null : "S" + String.format("%02d", season);
-        
-        for (String s : suscriptas) {
-            System.out.println("Serie: " + s);
-            ArrayList<String> series = this.getSeriesList(s);
-            for (int i=0; i<series.size(); i++) {
-                if (checkLastOnly && i<series.size()-1) {
-                    continue;
-                }
-                String x = series.get(i);
-                String tSerie = x.split(";;;")[1];
-                int pageId = Integer.parseInt(x.split(";;;")[0]);
-                //System.out.println("  Temporada " + tSerie);
-                for (String l : this.getLinks(pageId)) {
-                    if (checkExistInFile(l, historyFile) == null) {
-                        if (maskSeason != null) {
-                            if (!l.contains(maskSeason)) {
-                                continue;
-                            }
-                        }
-                        switch(linkType) {
-                            case SubscrManagerAPI.LINKS_ED2K:
-                                if (!l.contains("ed2k")) {
-                                    continue;
-                                }
-                                break;
-                            case SubscrManagerAPI.LINKS_TORRENT:
-                                if (!l.contains("magnet")) {
-                                    continue;
-                                }                                
-                                break;    
-                        }
-                        list.add(l);
-                        if (addToHistory == true) {
-                            this.addLinkToHistory(l);
-                        }
-                    }
-                }                
-            }
-        }
-        return list;
-    }
-    
     public String checkExistInFile(String txt, String fp) {
         String found = null;
         BufferedReader in;
@@ -205,7 +155,7 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
         }
         return found;
     }
-    
+
     public boolean checkPertenencia(String key, ArrayList<String> lista) {
         for (String s : lista) {
             if (key.contains(s)) {
@@ -216,16 +166,30 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
     }
 
     @Override
-    public void addLinkToHistory(String link) throws IOException {
-        if (checkExistInFile(link, historyFile) == null) {
+    public void addLinkToHistory(String serie, int threadId, int episodio, String link) throws IOException {
+        String row = serie + ";" + threadId + ";" + episodio + ";" + link;
+        if (checkExistInFile(row, historyFile) == null) {
             try (FileWriter fr = new FileWriter(new File(historyFile), true)) {
-                fr.append(link + "\n");
+                fr.append(row + "\n");
             } catch (IOException ex) {
                 System.err.println(ex.toString());
             }
-        }        
+        }
     }
 
+    @Override
+    public boolean checkLinkInHistory(String serie, int threadId, int episodio, String link) throws IOException {
+        boolean exists;
+        String row = serie + ";" + threadId + ";" + episodio;
+        if (checkExistInFile(row, historyFile) == null) {
+            exists = false;
+        }
+        else {
+            exists = true;
+        }
+        return exists;
+    }    
+    
     private void refreshLocalSeriesList() throws IOException {
         SimpleDateFormat format = new SimpleDateFormat("ddMMyy");
         String sDate = format.format(new Date());
@@ -286,4 +250,123 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
         }
         return lista;
     }
+
+    public Temporada getLinks2(String serie, int pageId) throws IOException {
+        Temporada temporada = new Temporada();
+        URL URLpagina = new URL("http://www.subadictos.net/foros/showthread.php?t=" + pageId);
+
+        Pattern p = Pattern.compile(".+<a href=\"([ed2k|magnet])(.*)\" target=\"_blank\"><b>[Ee]pisode ([0-9]+)</b>.*");
+        
+        URLConnection pg = URLpagina.openConnection();
+        pg.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(pg.getInputStream()))) {
+            String txt;
+            while ((txt = in.readLine()) != null) {
+                Matcher m = p.matcher(txt);
+                if (m.matches()) {
+                    int episodio = Integer.parseInt(m.group(3));
+                    temporada.addLink(episodio, m.group(1) + m.group(2));
+                }
+            }
+        }
+        return temporada;
+    }    
+    
+    @Override
+    public ArrayList<String> getNewLinksList(int lType, int season, boolean addToHistory, boolean checkLastOnly) throws IOException {
+        ArrayList<String> list = new ArrayList();
+        ArrayList<String> suscriptas = this.getSubscriptionList();
+
+        String maskSeason = (season == 0) ? null : "S" + String.format("%02d", season);
+
+        for (String s : suscriptas) {
+            ArrayList<String> series = this.getSeriesList(s);
+            for (int i=0; i<series.size(); i++) {
+                if (checkLastOnly && i<series.size()-1) {
+                    continue;
+                }
+                String x = series.get(i);
+                //String tSerie = x.split(";;;")[1];
+                int pageId = Integer.parseInt(x.split(";;;")[0]);
+                
+                Temporada t = this.getLinks2(s, pageId);
+                for (int e=0; e<t.getCtdEpisodiosDisponibles(); e++) {
+                    if (this.checkLinkInHistory(s, pageId, e, null) == false) {
+                        ArrayList<String> links = t.getListaEpisodios(e);
+                        String candidato = "?";
+                        for (String se : links) {
+                            String tLink = se.split(":")[0];
+                            if (lType == SubscrManagerAPI.LINKS_ANY) {
+                                candidato = se;
+                                break;
+                            }
+                            else if (lType == SubscrManagerAPI.LINKS_ED2K && tLink.equalsIgnoreCase("ed2k")) {       
+                                candidato = se;
+                                break;                            
+                            }
+                            else if (lType == SubscrManagerAPI.LINKS_TORRENT && tLink.equalsIgnoreCase("magnet")) {
+                                candidato = se;
+                                break;                                
+                            }   
+                            else {
+                                System.out.println("MAL getNewLinksList! " + se);
+                            }
+                        }
+                        System.out.println("Link candidato: " + candidato);
+                        // devolver el link candidato y agregar al historico
+                    }
+                }
+            }
+        }        
+        return list;
+    }
+    
+    /*
+    @Override
+    public ArrayList<String> getNewLinksList(int linkType, int season, boolean addToHistory, boolean checkLastOnly) throws IOException {
+        ArrayList<String> list = new ArrayList();
+        ArrayList<String> suscriptas = this.getSubscriptionList();
+
+        String maskSeason = (season == 0) ? null : "S" + String.format("%02d", season);
+
+        for (String s : suscriptas) {
+            ArrayList<String> series = this.getSeriesList(s);
+            for (int i=0; i<series.size(); i++) {
+                if (checkLastOnly && i<series.size()-1) {
+                    continue;
+                }
+                String x = series.get(i);
+                String tSerie = x.split(";;;")[1];
+                int pageId = Integer.parseInt(x.split(";;;")[0]);
+                //System.out.println("  Temporada " + tSerie);
+                for (String l : this.getLinks(pageId)) {
+                    if (checkExistInFile(l, historyFile) == null) {
+                        if (maskSeason != null) {
+                            if (!l.contains(maskSeason)) {
+                                continue;
+                            }
+                        }
+                        switch(linkType) {
+                            case SubscrManagerAPI.LINKS_ED2K:
+                                if (!l.contains("ed2k")) {
+                                    continue;
+                                }
+                                break;
+                            case SubscrManagerAPI.LINKS_TORRENT:
+                                if (!l.contains("magnet")) {
+                                    continue;
+                                }
+                                break;
+                        }
+                        list.add(l);
+                        if (addToHistory == true) {
+                            this.addLinkToHistory(l);
+                        }
+                    }
+                }
+            }
+        }
+        return list;
+    }
+    */    
 }
