@@ -200,30 +200,23 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
     private void refreshLocalSeriesList() throws IOException {
         SimpleDateFormat format = new SimpleDateFormat("ddMMyy");
         String sDate = format.format(new Date());
-        String line;
-        ArrayList<String> lista;
         String fName = this.dirBase + "/" + sDate + "_series.txt";
         this.listaSeries = new HashSet<String>();
         if (!Files.exists(Paths.get(fName))) {
             System.out.println("Primera ejecucion del dia " + sDate + ". Actualizando estructuras internas.");
-            lista = this.downloadList("http://www.subadictos.net/index.php?page=SeriesTodas");
-            for (String s : lista) {
+            for (String s : this.downloadList("http://www.subadictos.net/index.php?page=SeriesTodas")) {
                 this.listaSeries.add(s);
             }
-            lista = this.downloadList("http://www.subadictos.net/index.php?page=TemporadasEnCurso");
-            for (String s : lista) {
+            for (String s : this.downloadList("http://www.subadictos.net/index.php?page=TemporadasEnCurso")) {
                 this.listaSeries.add(s);
             }
-            lista = this.downloadList("http://www.subadictos.net/index.php?page=SeriesTodasHD");
-            for (String s : lista) {
+            for (String s : this.downloadList("http://www.subadictos.net/index.php?page=SeriesTodasHD")) {
                 this.listaSeries.add(s);
             }
-            lista = this.downloadList("http://www.subadictos.net/index.php?page=SeriesProximas");
-            for (String s : lista) {
+            for (String s : this.downloadList("http://www.subadictos.net/index.php?page=SeriesProximas")) {
                 this.listaSeries.add(s);
             }
-            lista = this.downloadList("http://www.subadictos.net/index.php?page=HDSeriesCurso");
-            for (String s : lista) {
+            for (String s : this.downloadList("http://www.subadictos.net/index.php?page=HDSeriesCurso")) {
                 this.listaSeries.add(s);
             }            
                                  
@@ -238,6 +231,7 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
         }
         else {
             // Ya se bajo previamente la lista de series, ahora se levanta a memoria
+            String line;
             BufferedReader in = new BufferedReader(new FileReader(new File(fName)));
             while((line = in.readLine()) != null) {
                 this.listaSeries.add(line);
