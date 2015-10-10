@@ -1,6 +1,4 @@
-LinksManagerSubadictos
-
-** Documento en construccion **
+#LinksManagerSubadictos
 
 LinksManagerSubadictos es un programa pensado para facilitar el seguimiento de series de TV, mediante la
 automatizacion de la obtencion de links de descarga para descargas P2P, utilizando como fuente el sitio
@@ -8,20 +6,20 @@ http://www.subadictos.com
 
 Puede ser utilizado por linea de comandos, interactivamente o puede ser invocado programaticamente via RMI.
 
-Usos:
+##Usos:
 
-**General**
+###General
 
 java -jar LinksManagerSubadictos.jar addSus|delSus|listSeries|listSus|getNewLinks \<arg\>
 
-**Visualizacion y busqueda de series disponibles**
+###Visualizacion y busqueda de series disponibles
 
 java -jar LinksManagerSubadictos.jar listSeries \<filtro\>
 
 donde \<filtro\> puede ser el nombre exacto de la serie o una parte del nombre, utilizando el caracter * al
 final del mismo. Pueden incluirse multiples palatras, en este caso, entre comillas dobles.
 
-**Suscribirse a una serie**
+###Suscribirse a una serie
 
 java -jar LinksManagerSubadictos.jar addSus \<serie\>
 
