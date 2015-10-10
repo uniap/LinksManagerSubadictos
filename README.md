@@ -16,7 +16,7 @@ java -jar LinksManagerSubadictos.jar addSus|delSus|listSeries|listSus|getNewLink
 
 **Visualizacion y busqueda de series disponibles**
 
-java -jar LinksManagerSubadictos.jar listSeries <filtro>
+java -jar LinksManagerSubadictos.jar listSeries \<filtro\>
 
 donde <filtro> puede ser el nombre exacto de la serie o una parte del nombre, utilizando el caracter * al
 final del mismo. Pueden incluirse multiples palatras, en este caso, entre comillas dobles.
