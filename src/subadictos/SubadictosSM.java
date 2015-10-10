@@ -117,8 +117,15 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
                         System.out.println("ADVERTENCIA, NOT MATCH " + line);
                     }
                 }
-                if (!titulo.equalsIgnoreCase(filtro)) {
-                    continue;
+                if (!filtro.contains("%")) {
+                    if (!titulo.equalsIgnoreCase(filtro)) {
+                        continue;
+                    }
+                }
+                else {
+                    if (!titulo.contains(filtro.replace("%", ""))) {
+                        continue;
+                    }
                 }
             }
             list.add(line);
@@ -166,7 +173,7 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
     }
 
     @Override
-    public void addLinkToHistory(String serie, int threadId, int episodio, String link) throws IOException {
+    public void addLinkToHistory(String serie, int threadId, String episodio, String link) throws IOException {
         String row = serie + ";" + threadId + ";" + episodio + ";" + link;
         if (checkExistInFile(row, historyFile) == null) {
             try (FileWriter fr = new FileWriter(new File(historyFile), true)) {
@@ -178,7 +185,7 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
     }
 
     @Override
-    public boolean checkLinkInHistory(String serie, int threadId, int episodio, String link) throws IOException {
+    public boolean checkLinkInHistory(String serie, int threadId, String episodio, String link) throws IOException {
         boolean exists;
         String row = serie + ";" + threadId + ";" + episodio;
         if (checkExistInFile(row, historyFile) == null) {
@@ -211,6 +218,15 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
             for (String s : lista) {
                 this.listaSeries.add(s);
             }
+            lista = this.downloadList("http://www.subadictos.net/index.php?page=SeriesProximas");
+            for (String s : lista) {
+                this.listaSeries.add(s);
+            }
+            lista = this.downloadList("http://www.subadictos.net/index.php?page=HDSeriesCurso");
+            for (String s : lista) {
+                this.listaSeries.add(s);
+            }            
+                                 
             try (FileWriter fr = new FileWriter(new File(fName), true)) {
                 Iterator<String> it = this.listaSeries.iterator();
                 while (it.hasNext()) {
@@ -251,11 +267,11 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
         return lista;
     }
 
-    public Temporada getLinks2(String serie, int pageId) throws IOException {
+    private Temporada getLinks2(String serie, int pageId) throws IOException {
         Temporada temporada = new Temporada();
         URL URLpagina = new URL("http://www.subadictos.net/foros/showthread.php?t=" + pageId);
 
-        Pattern p = Pattern.compile(".+<a href=\"([ed2k|magnet])(.*)\" target=\"_blank\"><b>[Ee]pisode ([0-9]+)</b>.*");
+        Pattern p = Pattern.compile(".+<a href=\"([ed2k|magnet])(.*)\" target=\"_blank\"><b>(.*)</b></a>.*");
         
         URLConnection pg = URLpagina.openConnection();
         pg.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
@@ -264,7 +280,7 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
             while ((txt = in.readLine()) != null) {
                 Matcher m = p.matcher(txt);
                 if (m.matches()) {
-                    int episodio = Integer.parseInt(m.group(3));
+                    String episodio = m.group(3);
                     temporada.addLink(episodio, m.group(1) + m.group(2));
                 }
             }
@@ -277,7 +293,7 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
         ArrayList<String> list = new ArrayList();
         ArrayList<String> suscriptas = this.getSubscriptionList();
 
-        String maskSeason = (season == 0) ? null : "S" + String.format("%02d", season);
+        //String maskSeason = (season == 0) ? null : "S" + String.format("%02d", season);
 
         for (String s : suscriptas) {
             ArrayList<String> series = this.getSeriesList(s);
@@ -286,87 +302,39 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
                     continue;
                 }
                 String x = series.get(i);
-                //String tSerie = x.split(";;;")[1];
                 int pageId = Integer.parseInt(x.split(";;;")[0]);
                 
                 Temporada t = this.getLinks2(s, pageId);
-                for (int e=0; e<t.getCtdEpisodiosDisponibles(); e++) {
+                
+                for (String e : t.getListaEpisodios()) {
                     if (this.checkLinkInHistory(s, pageId, e, null) == false) {
-                        ArrayList<String> links = t.getListaEpisodios(e);
-                        String candidato = "?";
+                        ArrayList<String> links = t.getLinksEpisodio(e);
                         for (String se : links) {
                             String tLink = se.split(":")[0];
                             if (lType == SubscrManagerAPI.LINKS_ANY) {
-                                candidato = se;
+                                list.add(se);
+                                this.addLinkToHistory(s, pageId, e, se);
                                 break;
                             }
                             else if (lType == SubscrManagerAPI.LINKS_ED2K && tLink.equalsIgnoreCase("ed2k")) {       
-                                candidato = se;
+                                list.add(se);
+                                this.addLinkToHistory(s, pageId, e, se);
                                 break;                            
                             }
                             else if (lType == SubscrManagerAPI.LINKS_TORRENT && tLink.equalsIgnoreCase("magnet")) {
-                                candidato = se;
+                                list.add(se);
+                                this.addLinkToHistory(s, pageId, e, se);
                                 break;                                
                             }   
                             else {
                                 System.out.println("MAL getNewLinksList! " + se);
                             }
                         }
-                        System.out.println("Link candidato: " + candidato);
-                        // devolver el link candidato y agregar al historico
+                        
                     }
                 }
             }
         }        
         return list;
     }
-    
-    /*
-    @Override
-    public ArrayList<String> getNewLinksList(int linkType, int season, boolean addToHistory, boolean checkLastOnly) throws IOException {
-        ArrayList<String> list = new ArrayList();
-        ArrayList<String> suscriptas = this.getSubscriptionList();
-
-        String maskSeason = (season == 0) ? null : "S" + String.format("%02d", season);
-
-        for (String s : suscriptas) {
-            ArrayList<String> series = this.getSeriesList(s);
-            for (int i=0; i<series.size(); i++) {
-                if (checkLastOnly && i<series.size()-1) {
-                    continue;
-                }
-                String x = series.get(i);
-                String tSerie = x.split(";;;")[1];
-                int pageId = Integer.parseInt(x.split(";;;")[0]);
-                //System.out.println("  Temporada " + tSerie);
-                for (String l : this.getLinks(pageId)) {
-                    if (checkExistInFile(l, historyFile) == null) {
-                        if (maskSeason != null) {
-                            if (!l.contains(maskSeason)) {
-                                continue;
-                            }
-                        }
-                        switch(linkType) {
-                            case SubscrManagerAPI.LINKS_ED2K:
-                                if (!l.contains("ed2k")) {
-                                    continue;
-                                }
-                                break;
-                            case SubscrManagerAPI.LINKS_TORRENT:
-                                if (!l.contains("magnet")) {
-                                    continue;
-                                }
-                                break;
-                        }
-                        list.add(l);
-                        if (addToHistory == true) {
-                            this.addLinkToHistory(l);
-                        }
-                    }
-                }
-            }
-        }
-        return list;
-    }
-    */    
 }

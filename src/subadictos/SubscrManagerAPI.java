@@ -15,6 +15,6 @@ public interface SubscrManagerAPI extends Remote {
     public ArrayList<String> getSeriesList(String filtro) throws IOException;
     public ArrayList<String> getSubscriptionList() throws IOException;
     public ArrayList<String> getNewLinksList(int tipo, int season, boolean addToHistory, boolean checkLastOnly) throws IOException;    
-    public void addLinkToHistory(String serie, int threadId, int episodio, String link) throws IOException;
-    public boolean checkLinkInHistory(String serie, int threadId, int episodio, String link) throws IOException;
+    public void addLinkToHistory(String serie, int threadId, String episodio, String link) throws IOException;
+    public boolean checkLinkInHistory(String serie, int threadId, String episodio, String link) throws IOException;
 }

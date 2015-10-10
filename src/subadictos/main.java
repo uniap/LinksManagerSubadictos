@@ -1,6 +1,6 @@
+
 package subadictos;
 
-import rmiapi.SubscrManagerAPI;
 import java.io.IOException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.RemoteException;
@@ -25,10 +25,6 @@ public class main {
         } catch (AlreadyBoundException ex) {
             System.out.println("Puerto " + port + " no disponible.");
             standalone = true;
-        }
-        
-        if (standalone == true) {
-            sm.getLinks2(43194);
         }
         
         if (standalone) {
