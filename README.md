@@ -26,14 +26,14 @@ java -jar LinksManagerSubadictos.jar addSus|delSus|listSeries|listSus|getNewLink
 
 java -jar LinksManagerSubadictos.jar listSeries \<filtro\>
 
-donde \<filtro\> puede ser el nombre exacto de la serie o una parte del nombre, utilizando el caracter * al
+donde \<filtro\> puede ser el nombre exacto de la serie o una parte del nombre, utilizando el caracter % al
 final del mismo. Pueden incluirse multiples palatras, en este caso, entre comillas dobles.
 
 ###Suscribirse a una serie
 
 java -jar LinksManagerSubadictos.jar addSus \<serie\>
 
-donde \<serie\> debe ser el nombre exacto (NO INCLUIR *) de la serie como figura en el resultado de una
+donde \<serie\> debe ser el nombre exacto (NO INCLUIR %) de la serie como figura en el resultado de una
 busqueda.
 
 Luego de suscribir una serie, se recibiran los nuevos links publicados para la misma via "getNewLinks"
@@ -56,7 +56,7 @@ java -jar LinksManagerSubadictos.jar getNewLinks \<tipo_link\>
 
 donde \<tipo_link\> es el tipo de link P2P que se quiere obtener, con las siguientes opciones:
 
- \<tipo_link\> := [ ed2k | torrent | * ]
+ \<tipo_link\> := [ ed2k | torrent | % ]
 
 Ejecuta la busqueda de nuevos links para cada una de las series suscriptas para su incorporacion
 en algun programa de descargas P2P.

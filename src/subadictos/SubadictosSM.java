@@ -23,8 +23,11 @@ public class SubadictosSM extends UnicastRemoteObject implements SubscrManagerAP
     String dirBase, subsFile, historyFile;
     HashSet<String> listaSeries;
 
-    public SubadictosSM() throws RemoteException {
+    public SubadictosSM() throws RemoteException, IOException {
         listaSeries = null;
+        if (!Files.exists(Paths.get("./data"))) {
+            Files.createDirectory(Paths.get("./data"));
+        }
     }
 
     @Override
