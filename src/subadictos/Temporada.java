@@ -2,51 +2,54 @@
 package subadictos;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Set;
 
 public class Temporada {
-    
-    HashMap<String, ArrayList<String>> episodios;
+        
+    ArrayList<Episodio> episodios;
     
     public Temporada() {
-        episodios = new HashMap<>();
+        episodios = new ArrayList<>();
     }
     
-    void addLink(String episodio, String link) {
-        ArrayList<String> links;
-        
-        if (episodios.containsKey(episodio)) {
-            links = episodios.get(episodio);
+    public void addLink(String episodio, String link) {
+        boolean existente = false;
+        for (Episodio e : this.episodios) {
+            if (e.getIdCap().equals(episodio)) {
+                e.addLink(link);
+                existente = true;
+            }
         }
-        else {
-            links = new ArrayList<>();
+        if (existente == false) {
+            Episodio n = new Episodio(episodio);
+            n.addLink(link);
+            this.episodios.add(n);
         }
-        links.add(link);
-        episodios.put(episodio, links);
     }
     
     public int getCtdEpisodiosDisponibles() {
         return this.episodios.size();
     }
     
-    public Set<String> getListaEpisodios() {
-        return this.episodios.keySet();
+    public ArrayList<Episodio> getListaEpisodios() {
+        return this.episodios;
     }
     
     
     public ArrayList<String> getLinksEpisodio(String episodio) {
-        return this.episodios.get(episodio);
+        for (Episodio e: this.episodios) {
+            if (e.getIdCap().equals(episodio)) {
+                return e.getListaLinks();
+            }
+        }
+        return null;
     }
     
-    private void showDetails() {
-        System.out.println("Cantidad de episodios: " + this.getCtdEpisodiosDisponibles());
-        for (String key : this.episodios.keySet()) {
-            ArrayList<String> links = this.getLinksEpisodio(key);
-            System.out.println("Episodio " + key);
-            for (String l : links) {
-                System.out.println("    link=" + l);
-            }            
+    public void showDetails() {
+        for (Episodio e : this.episodios) {
+            System.out.println("Episodio: " + e.getIdCap());
+            for (String link : e.getListaLinks()) {
+                System.out.println("> link: " + link);
+            }
         }
     }
 }

@@ -7,6 +7,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
+import rmiapi.SubscrManagerAPI;
 
 // Args: addSus|delSus|listSeries|listSus|getNewLinks <arg>
 
@@ -63,7 +64,7 @@ public class main {
                     } else {
                         arg1 = SubscrManagerAPI.LINKS_ANY;
                     }
-                    result = sm.getNewLinksList(arg1, 0, true, false);
+                    result = sm.getNewLinks(arg1, 0, true);
                     break;
                     
                 default:
